@@ -1,0 +1,1407 @@
+<!-- v20250816: use gdrivepicker -->
+<!-- v20250816: move storeid out from fetching -->
+<!-- 20250816-v2: add adilk expanding window -->
+
+<div class="chatbot-container">
+  <!-- Left Sidebar for Chat Rooms -->
+  <div class="chat-rooms-sidebar">
+    <h3>Chat Rooms</h3>
+    <button id="create-room" class="create-room-btn">+ New Room</button>
+    <ul id="room-list" class="room-list">
+      <li class="room-item active" data-room-id="general">General</li>
+      <!-- Dynamically populated rooms will appear here -->
+    </ul>
+    <span id="save-status" style="display: none;"></span>
+    <span id="edit-save-dir-btn" class="edit-save-dir-btn" style="display:none; margin-right:8px;">Edit</span>
+   
+    <div class="folder-inputs" id="folder-inputs" style="display: none; margin-top: 15px;">
+      <div class="input-folder-container" style="display: flex; flex: 1; gap: 10px;">
+        <input type="text" id="input-folder" placeholder="Input Folder ID/Name" class="folder-input">
+        <button id="view-folder-btn" class="view-folder-btn" style="display: none;">Confirm</button>
+      </div>
+      <input type="text" id="output-folder" placeholder="Output Folder ID/Name" class="folder-input" style="margin-top: 10px;">
+    </div>
+
+  </div>
+
+  <!-- Main Chat Window -->
+  <div class="chatbot-window">
+    <div class="tokens-display">
+      <div>
+        <div id="shopify-customer" data-customer-id="{{ customer.id }}"></div>
+        AI credits: <span id="customer-tokens"></span>
+        <select id="credit-account-selector" class="credit-account-selector"></select>
+      </div>
+      <select id="storage-mode-selector" class="storage-mode-selector"></select>
+    </div>
+    {% comment %} <div class="chatbot-messages">
+      <!-- Messages will appear here -->
+    </div> {% endcomment %}
+    <div class="chatbot-input">
+      <textarea placeholder="Type your message..." class="chatbot-input-field" id="chatbot-input-field" rows="2"></textarea>
+      <button class="chatbot-attach" id="attach-button" title="Attach file">📎</button>
+
+      <select id="bot-selector" class="bot-selector"></select>
+      <button class="chatbot-send" id="send-button">Send</button>
+    </div>
+
+    <div id="folder-popup" class="folder-popup" style="display: none;">
+        <div class="folder-popup-content">
+          <span class="close-popup">&times;</span>
+          <h3>Folder Contents</h3>
+          <div id="folder-stats"></div>
+          <div class="popup-actions">
+            <button id="use-folder" class="use-folder-btn">✓ Use This Folder</button>
+            <button id="cancel-folder" class="cancel-folder-btn">✕ Cancel</button>
+          </div>
+        </div>
+      </div>    
+  </div>
+</div>
+
+<div>
+  <span id="selected-file-name"></span>
+</div>
+<button id="choose-local-input">Choose Local Input Folder</button>
+<button id="choose-local-output">Choose Local Output Folder</button>
+<button id="choose-folder">Choose Dropbox Input Folder</button>
+<button id="choose-db-output">Choose Dropbox Output Folder</button>
+<button id="choose-gdrive">Choose Drive Input Folder</button>
+<button id="choose-output">Choose Drive Output Folder</button>
+<label>
+  <input type="checkbox" id="async-mode-checkbox">
+  Bot Completion Notification
+</label>
+<div id="selected-input-folder"></div>
+<div id="selected-output-folder"></div>
+<div id="snackbar" class="snackbar" style="display:none;">
+  <span id="snackbar-close" class="sidebar-close">×</span>
+  <div id="snackbar-message"></div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/LANGYA-AI-LIMITED/mb-styles@latest/styles_v4.css">
+
+<script type="text/javascript" src="https://www.dropbox.com/static/api/2/dropins.js" id="dropboxjs" data-app-key="{{ settings.data-app-key }}"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+      // 20250816-v2: add adilk expanding window
+    let userInput = document.getElementById('chatbot-input-field');
+    function autoExpandTextarea() {
+      console.log('autoExpandTextarea called, userInput:', userInput);
+      if (!userInput) {
+        console.error('userInput is not defined');
+        return;
+      }
+      console.log('Current height:', userInput.style.height);
+      console.log('ScrollHeight:', userInput.scrollHeight);
+      userInput.style.height = 'auto';
+      const newHeight = Math.min(userInput.scrollHeight, 150); // Max height of 150px
+      userInput.style.height = newHeight + 'px';
+      console.log('New height set to:', newHeight + 'px');
+    }
+
+    // Initialize textarea height
+    autoExpandTextarea();    
+    
+    // Add a test button to manually trigger auto-expansion (for debugging)
+    const testButton = document.createElement('button');
+    testButton.textContent = 'Test Auto-Expand';
+    testButton.style.position = 'fixed';
+    testButton.style.top = '10px';
+    testButton.style.right = '10px';
+    testButton.style.zIndex = '9999';
+    testButton.style.backgroundColor = 'red';
+    testButton.style.color = 'white';
+    testButton.addEventListener('click', function() {
+      console.log('Manual test button clicked');
+      autoExpandTextarea();
+    });
+    document.body.appendChild(testButton);    
+    
+    // Add debugging to check if userInput is properly selected
+    console.log('userInput element:', userInput);
+    console.log('userInput tagName:', userInput ? userInput.tagName : 'undefined');
+    console.log('userInput is connected to DOM:', userInput ? userInput.isConnected : 'undefined');
+    console.log('userInput value:', userInput ? userInput.value : 'undefined');
+    
+    // Verify the element exists and has the right properties
+    if (!userInput) {
+      console.error('ERROR: userInput element not found!');
+    }
+    
+    // Test if event listeners can be attached at all
+    userInput.addEventListener('focus', function() {
+      console.log('Focus event triggered - event listeners are working!');
+    });
+    
+    userInput.addEventListener('blur', function() {
+      console.log('Blur event triggered');
+    });
+
+    console.log("AAAA");
+    
+    // Add event listeners for auto-expansion
+    userInput.addEventListener('input', function() {
+      console.log('Input event triggered');
+      autoExpandTextarea();
+      // Reset to initial size when empty
+      if (this.value === '') {
+        this.style.height = '20px';
+      }
+    });
+
+    // Add keydown event listener (more reliable than keypress)
+    userInput.addEventListener('keydown', function (e) {
+      console.log('Keydown event triggered, key:', e.key, 'code:', e.code);
+      {% comment %} if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault(); // Prevent new line when sending
+        console.log('Enter pressed, sending message');
+        sendButton.click();
+      } else { {% endcomment %}
+        // Allow auto-expansion for other keys and Shift+Enter
+        console.log('Other key down, will auto-expand after delay:', e.key);
+        setTimeout(function() {
+          autoExpandTextarea();
+        }, 0);
+        autoExpandTextarea();
+    });
+
+    // Also add keyup event listener as backup
+    userInput.addEventListener('keyup', function (e) {
+      console.log('Keyup event triggered, key:', e.key);
+      // Auto-expand on keyup for all keys
+      setTimeout(function() {
+        autoExpandTextarea();
+      }, 0);
+    });
+
+    // Add paste event listener for auto-expansion
+    userInput.addEventListener('paste', function() {
+      console.log('Paste event triggered');
+      setTimeout(function() {
+        autoExpandTextarea();
+      }, 0);
+    });
+  //------------------------------------------------:
+  async function sendLogToBackend(log) {
+    try {
+      await fetch(`${baseUrl_tokens}/logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ log }),
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async function loadMessagesLocally(roomId) {
+    if (!directoryHandle) {
+      console.warn('No directory selected for local loading');
+      sendLogToBackend(`No directory selected for local loading`);
+      return [];
+    }
+    try {
+      // Find the directory with the combined name
+      let roomDirName = null;
+      const roomEntries = directoryHandle.entries(); // Returns an async iterator
+      for await (const [name, handle] of roomEntries) {
+        console.log(name);
+        if (handle.kind === 'directory' && name.startsWith(roomId + '_')) {
+          roomDirName = name; // Use the full combined name (e.g., "room123_MyRoom")
+          break;
+        }
+      }
+      if (!roomDirName) {
+        console.warn(`No directory found for roomId ${roomId}`);
+        sendLogToBackend(`No directory found for roomId ${roomId}`);
+        return [];
+      }
+
+      const roomDir = await directoryHandle.getDirectoryHandle(roomDirName, { create: false });
+      console.log(currentRoom);
+      sendLogToBackend(currentRoom);
+      const fileHandle = await roomDir.getFileHandle('chat.json', { create: false });
+      const file = await fileHandle.getFile();
+      const text = await file.text();
+      const messages = JSON.parse(text) || [];
+
+      console.log(messages);
+      sendLogToBackend(messages);
+
+      for (let msg of messages) {
+        if (msg.isImage && msg.messageId) {
+          try {
+            const imagesDir = await roomDir.getDirectoryHandle('images', { create: false });
+            const imageFileName = `${msg.messageId}.png`;
+            const imageFileHandle = await imagesDir.getFileHandle(imageFileName, { create: false });
+            const file = await imageFileHandle.getFile();
+            const arrayBuffer = await file.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+            let binary = '';
+            for (let i = 0; i < uint8Array.length; i++) {
+              binary += String.fromCharCode(uint8Array[i]);
+            }
+            const base64 = btoa(binary);
+            msg.message = base64;
+          } catch (error) {
+            console.warn(`Could not load image for message ${msg.messageId}:`, error);
+            sendLogToBackend(`Could not load image for message ${msg.messageId}: ${error}`);
+            msg.message = null;
+          }
+        }
+        if (msg.attachments && msg.attachments.length > 0) {
+          msg.attachments.files = [];
+          const attachmentsDir = await roomDir.getDirectoryHandle('attachments', { create: false });
+          for (let att of msg.attachments) {
+            console.log(att);
+            const fileName = att.name;
+            const ext = att.ext;
+            const fileHandle = await attachmentsDir.getFileHandle(`${fileName}`, { create: false });
+            const file = await fileHandle.getFile();
+            const renamedFile = new File([file], att.name.substring(37), { type: file.type });
+            msg.attachments.files.push(renamedFile);
+          }
+        }
+      }
+
+      console.log('Loaded chats');
+      sendLogToBackend(`Loaded chats`);
+      return messages.filter((msg) => msg.roomId === roomId);
+    } catch (error) {
+      console.warn('No local messages or error reading file:', error);
+      sendLogToBackend(`No local messages or error reading file: ${error}`);
+      return [];
+    }
+  }
+
+  async function fetchRoomsLocal() {
+    let uniqueRooms = [];
+
+    if (directoryHandle) {
+      try {
+        const roomsFileHandle = await directoryHandle.getFileHandle('rooms.json', { create: false });
+        const file = await roomsFileHandle.getFile();
+        const text = await file.text();
+        uniqueRooms = JSON.parse(text) || [];
+        console.log('uniqueRooms: ', uniqueRooms);
+      } catch (error) {
+        console.warn('No local rooms metadata or error:', error);
+        sendLogToBackend(`No local rooms metadata or error: ${error}`);
+        uniqueRooms = [];
+      }
+    } else {
+      uniqueRooms = [];
+    }
+    return uniqueRooms;
+  }
+
+  async function fetchRooms() {
+    let uniqueRooms = [];
+    const defaultRoom = [{ roomId: await getUniqueId(), roomName: 'general', timestamp: null }];
+
+    console.log("fetch room in progress");
+    if (storageMode === 'GCP') {
+      uniqueRooms = await fetchRoomsGCP();
+    } else if (storageMode == 'DB') {
+      uniqueRooms = await fetchRoomsDB();
+    } else if (storageMode === 'local') {
+      console.log("fetch room for local");
+      uniqueRooms = await fetchRoomsLocal();
+    } else {
+      uniqueRooms = defaultRoom;
+    }
+    
+    if (!uniqueRooms || uniqueRooms.length <= 0) {
+      uniqueRooms = defaultRoom;
+    }
+
+    console.log(JSON.stringify(uniqueRooms));
+    sendLogToBackend(JSON.stringify(uniqueRooms));
+
+    uniqueRooms.sort((a, b) => {
+      const dateA = new Date(a.latestTimestamp);
+      const dateB = new Date(b.latestTimestamp);
+      return dateB - dateA;
+    });
+
+    currentRoomId = uniqueRooms[0].roomId;
+    currentRoom = uniqueRooms[0].roomName;
+
+    console.log('currentRoomId: ', currentRoomId, 'currentRoom: ', currentRoom);
+    sendLogToBackend(`currentRoomId: ${currentRoomId}, currentRoom: ${currentRoom}`);
+
+    const roomList = document.getElementById('room-list');
+    roomList.innerHTML = '';
+    uniqueRooms.forEach((room, idx) => {
+      const li = document.createElement('li');
+      li.classList.add('room-item');
+      if (idx === 0) li.classList.add('active');
+      li.setAttribute('data-room-id', room.roomId);
+      li.setAttribute('data-room-name', room.roomName);
+
+      // Create room name span
+      const roomNameSpan = document.createElement('span');
+      roomNameSpan.textContent = room.roomName;
+
+      // Create delete button
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = '×';
+      deleteButton.classList.add('delete-room-btn');
+      deleteButton.setAttribute('data-room-id', room.roomId);
+      deleteButton.addEventListener('click', async (e) => {
+        e.stopPropagation(); // Prevent triggering room selection
+        const roomIdToDelete = e.target.getAttribute('data-room-id');
+        await deleteRoom(roomIdToDelete);
+      });
+
+      // Append name and button to li
+      li.appendChild(roomNameSpan);
+      li.appendChild(deleteButton);
+
+      addRoomLatestTime(room.latestTimestamp, li);
+      roomList.appendChild(li);
+    });
+
+    await loadChatHistory(currentRoomId);
+  }
+  //------------------------------------------------:
+  //# variables init
+  //v15
+  let useOrNot = false;
+  let CUSTOMER_ID = null;
+  let attachedFiles = [];
+  //v7
+  let storageMode = null;
+  let storageModeSelector = null;
+  let directoryHandle = null;
+  let lcdirectoryHandle = null;
+  //v5
+  let messagesDiv = null;
+  let tokensDisplay = null;
+  let creditAccountSelector = null;
+  let botSelector = null;
+  //let userInput = '';
+  let roomList = [];
+  let saveStatus = null;
+  let editSaveDirBtn = null;
+  let sendButton = null;
+  let createRoomBtn = null;
+  let dbChooseFolderBtn = null;
+  let botsList = [];
+  let isDropboxLinked = false;
+
+  let thinkingInterval = null;
+  let thinkingMessageDiv = null;
+  //v5
+  let chatHistory = [];
+  let userHistory = [];
+  let limitedHistory = [];
+  let limitedUserHistory = [];
+  //v6
+  let currentRoomId = null;
+  let currentRoom = null;
+  //v7
+  const storageModes = {
+    none: 'None',
+    local: 'Local Storage',
+    premium: 'Premium Dropbox',
+    premiumd: 'Premium Drive',
+    premiuml: 'Premium Local'
+  };
+  // v20250816: move storeid out from fetching
+  const storeId = 'langya-tech';
+
+  // Maps corresponding storage modes to their numerical representation
+  const mapper = {
+    'premiuml' : 1,
+    'premium' : 2,
+    'premiumd' : 3
+  }
+  const langya_secret_key = "{{ settings.langya_secret_key }}";
+
+  //v5
+  let currentBot = null;
+  let botsCategories = [];
+
+  //v18
+  let creditAccounts = [];
+  let currentCreditAccount = null;
+
+  //v20
+  let currencies = {};
+
+  //v21
+  let folderPopup = null;
+  let closePopupBtn = null;
+  let useFolderBtn = null;
+  let cancelFolderBtn = null;
+  let folderStats = null;
+  let viewFolderBtn = null;
+  let inputFolder = null;
+  let outputFolder = null;
+
+  let selectedFolderPath = null;
+  let selectedFolderId = null;
+  let googlePickerInitialized = false;
+  let folderName = null;
+  let folderId = null;
+  let OutputFolderId = null;
+  let asyncMode = false;
+
+
+  //----------- Helper functions -----------:
+  function addRoomLatestTime(timestamp, li) {
+    if (timestamp) {
+      const dateObj = new Date(timestamp);
+      const dateStr = formatDateYYYYMMDD(dateObj);
+      const timeStr = dateObj.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      });
+      const dateSpan = document.createElement('span');
+      dateSpan.style.float = 'right';
+      dateSpan.style.color = '#888';
+      dateSpan.style.fontSize = '0.95em';
+      dateSpan.textContent = `${dateStr}, ${timeStr}`;
+      li.appendChild(dateSpan);
+    }
+  }
+
+  //----------- display related -----------:
+
+  //# Add message (v1)
+  async function addMessage(
+    content,
+    isUser = false,
+    timestamp = null,
+    model,
+    isImage = false,
+    skipHistory = false,
+    files = []
+  ) {
+    const message = document.createElement('div');
+    message.classList.add('chatbot-message', isUser ? 'user' : 'bot');
+    let innerHTML = null;
+    if (!isUser && !isImage) {
+      innerHTML = await getHTMLformat(content);
+    }
+    stopBotThinking();
+
+    files = files || [];
+
+    if (files.length > 0 && isUser) {
+      const attachmentDiv = document.createElement('div');
+      attachmentDiv.classList.add('chatbot-attachment');
+      attachmentDiv.style.display = 'flex';
+      attachmentDiv.style.flexWrap = 'wrap';
+      attachmentDiv.style.gap = '10px';
+
+      const promises = [];
+
+      for (const file of files) {
+        if (file.type.startsWith('image/')) {
+          promises.push(renderImageMessage(attachmentDiv, file));
+        } else {
+          const iconSpan = document.createElement('span');
+          iconSpan.textContent = getFileIcon(file.type);
+          iconSpan.classList.add('chatbot-file-icon');
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = file.name || '';
+          const fileDiv = document.createElement('div');
+          fileDiv.appendChild(iconSpan);
+          fileDiv.appendChild(nameSpan);
+          attachmentDiv.appendChild(fileDiv);
+        }
+      }
+
+      await Promise.all(promises);
+
+      const textDiv = document.createElement('div');
+      // Use htmlFormat if provided, else fall back to content as plain text
+
+      if (!isUser) {
+        textDiv.innerHTML = innerHTML;
+      } else {
+        textDiv.innerHTML = content;
+      }
+
+     console.log(document.querySelector('.chatbot-input-field'));
+      textDiv.style.marginTop = '6px';
+      message.appendChild(attachmentDiv);
+      message.appendChild(textDiv);
+
+      if (timestamp) {
+        const date = new Date(timestamp);
+        const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        const dateString = formatDateYYYYMMDD(date);
+        let info = `${timeString}, ${dateString}`;
+        if (model) info += `, ${model}`;
+        const timeDiv = document.createElement('div');
+        timeDiv.classList.add('chatbot-message-time');
+        timeDiv.textContent = info;
+        message.appendChild(timeDiv);
+      }
+
+      messagesDiv.appendChild(message);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+      if (!skipHistory) userHistory.push(content);
+    } else {
+      if (!isImage) {
+        if (!isUser) {
+          message.innerHTML = innerHTML;
+        } else {
+          message.innerHTML = content;
+        }
+      }
+
+      const isErrorMsg = typeof content === 'string' && content.trim().startsWith('Sorry, an error occurred');
+
+      if (isImage && !isUser && !isErrorMsg) {
+        const img = document.createElement('img');
+        img.src = `data:image/png;base64,${content}`;
+        img.alt = 'Generated image';
+        img.classList.add('chatbot-image');
+        img.style.maxWidth = '100%';
+        img.style.marginTop = '10px';
+        message.appendChild(img);
+      } else if (isImage) {
+        message.textContent = 'Image generation failed. Please try again.';
+      }
+
+      if (timestamp) {
+        const date = new Date(timestamp);
+        const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        const dateString = formatDateYYYYMMDD(date);
+        let info = `${timeString}, ${dateString}`;
+        if (model) info += `, ${model}`;
+        const timeDiv = document.createElement('div');
+        timeDiv.classList.add('chatbot-message-time');
+        timeDiv.textContent = info;
+        message.appendChild(timeDiv);
+      }
+
+      messagesDiv.appendChild(message);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+      if (!isImage && !skipHistory) {
+        if (!isUser) chatHistory.push(content);
+        else userHistory.push(content);
+      }
+    }
+  }
+
+  //v14
+  function renderImageMessage(attachmentDiv, file) {
+    return new Promise((resolve, reject) => {
+      const img = document.createElement('img');
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        img.src = e.target.result;
+        img.alt = 'Attached image';
+        img.classList.add('chatbot-attached-image');
+        img.style.maxWidth = '30%';
+        img.style.marginBottom = '10px';
+        attachmentDiv.appendChild(img);
+        resolve();
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function reorderRoomList(currentRoomId) {
+    const roomList = document.getElementById('room-list');
+    const roomItems = Array.from(roomList.getElementsByClassName('room-item'));
+
+    const currentRoomItem = roomItems.find((item) => item.getAttribute('data-room-id') === currentRoomId);
+    if (!currentRoomItem) return;
+
+    roomItems.forEach((item) => item.classList.remove('active'));
+
+    // Preserve structure by re-adding name and delete button if needed
+    const roomName = currentRoomItem.getAttribute('data-room-name');
+    const nameSpan = currentRoomItem.querySelector('span') || document.createElement('span');
+    if (!nameSpan.parentNode) {
+      nameSpan.textContent = roomName;
+      currentRoomItem.insertBefore(nameSpan, currentRoomItem.firstChild);
+    }
+    const deleteButton = currentRoomItem.querySelector('.delete-room-btn') || document.createElement('button');
+    if (!deleteButton.parentNode) {
+      deleteButton.textContent = '×';
+      deleteButton.classList.add('delete-room-btn');
+      deleteButton.setAttribute('data-room-id', currentRoomId);
+      deleteButton.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await deleteRoom(currentRoomId);
+      });
+      currentRoomItem.appendChild(deleteButton);
+    }
+
+    roomList.prepend(currentRoomItem);
+    currentRoomItem.classList.add('active');
+  }
+
+  function updateTimeOfChatRoom() {
+    let now = new Date().toISOString();
+    const roomItem = document.querySelector(`.room-item[data-room-id="${currentRoomId}"]`);
+    if (roomItem) {
+      // Remove only the timestamp span, not the name or delete button
+      const oldSpan = roomItem.querySelector('span[style*="float: right"]');
+      if (oldSpan) oldSpan.remove();
+      addRoomLatestTime(now, roomItem);
+    }
+  }
+
+  function updateEditSaveDirBtnVisibility() {
+    if (directoryHandle) {
+      editSaveDirBtn.style.display = 'inline-block';
+    } else {
+      editSaveDirBtn.style.display = 'none';
+    }
+  }
+
+  document.getElementById('chatbot-input-field').style.rows = '3';
+
+  //# Bots selector dropdown menu (v5)
+  function populateBotSelector() {
+    botSelector.innerHTML = '';
+    const categories = {};
+
+    // Add default option
+    let defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Please select a bot';
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    botSelector.appendChild(defaultOption);
+
+    botsCategories.forEach((c) => {
+      category = c['page-list'];
+      categories[category] = [];
+      botsList.forEach((bot) => {
+        if (bot[category] == 1) {
+          categories[category].push(bot);
+        }
+      });
+    });
+
+    for (const category in categories) {
+      const group = document.createElement('optgroup');
+      group.label = category;
+
+      categories[category].forEach((bot) => {
+        const option = document.createElement('option');
+        option.value = bot.name;
+        const rates = currencies;
+        const currencyChosen = currentCreditAccount.balance.currencyCode;
+        const customerCurrencyRate = rates[currencyChosen];
+        const botCurrencyRate = rates[bot.currency];
+        const deduction = (bot.cost / (botCurrencyRate || 1)) * (customerCurrencyRate || 1);
+        option.textContent = `${bot.name} (min: ${customRound(deduction, 3)} ${currencyChosen})`;
+
+        if (currentBot && bot.id === currentBot.id) {
+          option.selected = true;
+        }
+
+        group.appendChild(option);
+      });
+      botSelector.appendChild(group);
+    }
+  }
+
+  //#  Storage selector dropdown menu (v7)
+  function populateStorageSelectorMenu() {
+    // Add default option
+    let defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Select a storage mode';
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    storageModeSelector.appendChild(defaultOption);
+
+    for (const key in storageModes) {
+      if (storageModes.hasOwnProperty(key)) {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = storageModes[key];
+        storageModeSelector.appendChild(option);
+      }
+    }
+  }
+
+  function populateCreditAccountSelector() {
+    creditAccountSelector.innerHTML = '';
+    creditAccounts.forEach((account, index) => {
+      const option = document.createElement('option');
+      option.value = index;
+      option.textContent = `${account.balance.currencyCode}`;
+      creditAccountSelector.appendChild(option);
+    });
+    if (creditAccounts.length > 0) {
+      creditAccountSelector.value = 0;
+    }
+  }
+
+  //#Start and stop thinking animation:
+  //v5
+  function startBotThinking() {
+    const dots = ['.\u00A0\u00A0', '..\u00A0', '...'];
+    let i = 0;
+
+    stopBotThinking();
+
+    thinkingMessageDiv = document.createElement('div');
+    thinkingMessageDiv.classList.add('chatbot-message', 'bot');
+    thinkingMessageDiv.textContent = dots[0];
+    messagesDiv.appendChild(thinkingMessageDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+    thinkingInterval = setInterval(() => {
+      i = (i + 1) % dots.length;
+      thinkingMessageDiv.textContent = dots[i];
+    }, 500);
+  }
+
+  //v5
+  function stopBotThinking() {
+    if (thinkingInterval) {
+      clearInterval(thinkingInterval);
+      thinkingInterval = null;
+    }
+    if (thinkingMessageDiv) {
+      messagesDiv.removeChild(thinkingMessageDiv);
+      thinkingMessageDiv = null;
+    }
+  }
+  
+  function getUrlParameter(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    //----------- Initial setup -----------:
+    
+    //# HTML elements control
+    //v1
+    CUSTOMER_ID = document.getElementById('shopify-customer').getAttribute('data-customer-id');
+    userInput = document.getElementById('chatbot-input-field');
+    sendButton = document.getElementById('send-button');
+    tokensDisplay = document.getElementById('customer-tokens');
+    messagesDiv = document.querySelector('.chatbot-messages');
+    //v3
+    roomList = document.getElementById('room-list');
+    createRoomBtn = document.getElementById('create-room');
+    //v5
+    botSelector = document.getElementById('bot-selector');
+    //v7
+    saveStatus = document.getElementById('save-status');
+    editSaveDirBtn = document.getElementById('edit-save-dir-btn');
+    storageModeSelector = document.getElementById('storage-mode-selector');
+    //v11
+    lcChooseFolderBtn = document.getElementById('choose-local-input');
+    lcChooseOutputBtn = document.getElementById('choose-local-output');
+    dbChooseFolderBtn = document.getElementById('choose-folder');
+    dbChooseOutputBtn = document.getElementById('choose-db-output');
+    gdChooseFolderBtn = document.getElementById('choose-gdrive');
+    gdChooseOutputBtn = document.getElementById('choose-output');
+    //v15
+    attachBtn = document.getElementById('attach-button');
+    fileInput = document.createElement('input');
+    //v16
+    selectedFileName = document.getElementById('selected-file-name');
+    //v18
+    creditAccountSelector = document.getElementById('credit-account-selector');
+
+    const snackbar = document.getElementById('snackbar');
+    const snackbarMessage = document.getElementById('snackbar-message');
+    const snackbarClose = document.getElementById('snackbar-close');
+
+    folderPopup = document.getElementById('folder-popup');
+    closePopupBtn = document.querySelector('.close-popup');
+    useFolderBtn = document.getElementById('use-folder');
+    cancelFolderBtn = document.getElementById('cancel-folder');
+    folderStatsDiv = document.getElementById('folder-stats');
+    viewFolderBtn = document.getElementById('view-folder-btn');
+    inputFolder = document.getElementById('input-folder');
+    outputFolder = document.getElementById('output-folder');
+
+    // Hide premium version buttons initially
+    lcChooseFolderBtn.style.display = 'none';
+    lcChooseOutputBtn.style.display = 'none';
+    dbChooseFolderBtn.style.display = 'none';
+    dbChooseOutputBtn.style.display = 'none';
+    gdChooseFolderBtn.style.display = 'none';
+    gdChooseOutputBtn.style.display = 'none';
+
+    fileInput.type = 'file';
+    fileInput.multiple = true;
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
+
+    console.log('CUSTOMER_ID: ', CUSTOMER_ID);
+    sendLogToBackend(`CUSTOMER_ID: ${CUSTOMER_ID}`);
+
+    //# Initial functions run
+    //v1
+    async function fetchCreditAccounts() {
+      await fetchTokens();
+      populateCreditAccountSelector();
+    }
+
+    fetchCreditAccounts();
+    //v3
+    fetchRooms();
+    //v7
+    populateStorageSelectorMenu();
+
+    async function getBots() {
+      await getCategoriesList();
+      let botsList = getBotsData();
+      console.log('categoriesList: ', botsCategories);
+    }
+
+    getBots();
+
+    fetchCurrencies();
+
+    //------------------------------------------------:
+
+    // Main function to delete a room based on storage mode
+
+    //----------- Event listener functions -----------:
+    // Generalized snackbar function
+    function showSnackbar(message, color) {
+      snackbarMessage.innerHTML = message;
+      snackbar.style.backgroundColor = color;
+      snackbar.style.display = 'block';
+      setTimeout(() => {
+        snackbar.style.display = 'none';
+      }, 4000);
+    }
+
+    function toggleAttachButton(hide = true) {
+      const attachButton = document.getElementById('attach-button');
+      if (hide) {
+        attachButton.style.display = 'none';
+      } else {
+        attachButton.style.display = 'block';
+      }
+    }
+
+    // Event listener for snackbar close button
+    snackbarClose.addEventListener('click', function () {
+      snackbar.style.display = 'none';
+    });
+
+    //# When messages are sent (v1)
+    sendButton.addEventListener('click', async function () {
+      if (!CUSTOMER_ID || CUSTOMER_ID === 'null' || CUSTOMER_ID === 'undefined' || CUSTOMER_ID === '') {
+        showSnackbar('Please login', 'rgb(255, 133, 32)');
+        return;
+      }
+      if (currentBot == null) {
+        showSnackbar('Please select a bot', 'rgb(16, 187, 255)');
+        return;
+      }
+      if (storageMode == null) {
+        showSnackbar('Please select a storage Mode', 'rgb(0, 167, 44)');
+        return;
+      }
+      let credit = parseFloat(tokensDisplay.textContent);
+      const currencyChosen = currentCreditAccount.balance.currencyCode;
+      const rates = currencies;
+      const customerCurrencyRate = rates[currencyChosen];
+      const botCurrencyRate = rates[currentBot.currency];
+      const minBotCost = (currentBot.cost / botCurrencyRate) * customerCurrencyRate;
+      if (credit < minBotCost) {
+        showSnackbar('Not enough credits', 'rgb(255, 100, 100)');
+        return;
+      }
+      const message = userInput.value.trim();
+      if (!message) {
+        return;
+      }
+
+      sendButton.disabled = true;
+      sendButton.classList.add('disabled');
+
+      let now = new Date().toISOString();
+      let text = userInput.value;
+
+      sendBtnLogic(currentCreditAccount);
+    });
+
+    
+    
+
+    //# Room selection and creation (v3)
+    roomList.addEventListener('click', function (e) {
+      const roomItem = e.target.closest('.room-item');
+      if (roomItem) {
+        document.querySelector('.room-item.active').classList.remove('active');
+        roomItem.classList.add('active');
+        currentRoomId = roomItem.getAttribute('data-room-id');
+        currentRoom = roomItem.getAttribute('data-room-name');
+        loadChatHistory(currentRoomId);
+        // Ensure name and delete button are present
+        const roomName = roomItem.getAttribute('data-room-name');
+        let nameSpan = roomItem.querySelector('span');
+        if (!nameSpan) {
+          nameSpan = document.createElement('span');
+          nameSpan.textContent = roomName;
+          roomItem.insertBefore(nameSpan, roomItem.firstChild);
+        }
+        let deleteButton = roomItem.querySelector('.delete-room-btn');
+        if (!deleteButton) {
+          deleteButton = document.createElement('button');
+          deleteButton.textContent = '×';
+          deleteButton.classList.add('delete-room-btn');
+          deleteButton.setAttribute('data-room-id', currentRoomId);
+          deleteButton.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await deleteRoom(currentRoomId);
+          });
+          roomItem.appendChild(deleteButton);
+        }
+      }
+    });
+
+    //# Create new room (v3)
+    createRoomBtn.addEventListener('click', async function () {
+      const roomName = prompt('Enter new room name (e.g., customer ID or custom name):');
+      if (!roomName) return;
+      const roomId = await getUniqueId();
+      currentRoomId = roomId;
+      currentRoom = roomName;
+
+      const li = document.createElement('li');
+      li.classList.add('room-item');
+
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = roomName;
+      li.appendChild(nameSpan);
+
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = '×';
+      deleteButton.classList.add('delete-room-btn');
+      deleteButton.setAttribute('data-room-id', roomId);
+      deleteButton.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await deleteRoom(roomId);
+      });
+      li.appendChild(deleteButton);
+
+      li.setAttribute('data-room-id', roomId);
+      li.setAttribute('data-room-name', roomName);
+      roomList.appendChild(li);
+      reorderRoomList(currentRoomId);
+      loadChatHistory(currentRoomId);
+    });
+
+    botSelector.addEventListener('change', function () {
+      
+      useOrNot = false;
+      viewFolderBtn.disabled = false;
+      viewFolderBtn.innerHTML = 'Confirm';
+      viewFolderBtn.style.backgroundColor = '#8d0033'; 
+      viewFolderBtn.style.cursor = 'pointer';
+      const selectedModel = this.value;
+      let selectedCategory = null;
+
+      const selectedOption = this.options[this.selectedIndex];
+      if (selectedOption) {
+        const optGroup = selectedOption.closest('optgroup');
+        if (optGroup) {
+          selectedCategory = optGroup.label;
+        }
+      }
+
+      botsList.forEach((bot) => {
+        if (bot.name === selectedModel) {
+          currentBot = bot;
+          currentBot.category = selectedCategory;
+        }
+      });
+
+      category = botsCategories.filter((c) => c['page-list'] == selectedCategory)[0];
+      
+      if (category['blockFileUploadFlag'] == 1) {
+        toggleAttachButton(true);
+      } else {
+        toggleAttachButton(false);
+      }
+      if (storageMode === 'premium' || storageMode === 'premiumd' || storageMode === 'premiuml') {
+        attachBtn.style.display = 'none';
+      } else {
+        attachBtn.style.display = 'block';
+      }
+      console.log(`Selected bot: ${selectedModel}, Category: ${selectedCategory}`);
+    });
+   
+    //# choose storing method (v7)
+    storageModeSelector.addEventListener('change', async function () {
+        storageMode = this.value;
+       
+        // Reset all UI elements first
+        dbChooseFolderBtn.style.display = 'none';
+        dbChooseOutputBtn.style.display = 'none';
+        gdChooseFolderBtn.style.display = 'none';
+        gdChooseOutputBtn.style.display = 'none';
+        lcChooseFolderBtn.style.display = 'none';
+        lcChooseOutputBtn.style.display = 'none';
+        attachBtn.style.display = 'none';
+        
+        // Clear folder displays
+        document.getElementById('selected-input-folder').textContent = "";
+        document.getElementById('selected-output-folder').textContent = "";
+
+        // Handle each storage mode
+        const modeHandlers = {
+          'premium': () => {
+            window.location.href = `https://us-central1-gdrive-functions.cloudfunctions.net/dropboxapiv3direct/auth/dropbox?customerId=${CUSTOMER_ID}`;
+          },
+          'premiumd': () => {
+            window.location.href = `https://us-central1-gdrive-functions.cloudfunctions.net/gdriveapiv5direct/auth/google?customerId=${CUSTOMER_ID}`;
+          },
+          'premiuml': () => {
+            lcChooseFolderBtn.style.display = 'block';
+            lcChooseOutputBtn.style.display = 'block';
+            document.getElementById('folder-inputs').style.display = 'block';
+          },
+          'local': async () => {
+            if (!directoryHandle) {
+              attachBtn.style.display = 'block';
+              document.getElementById('folder-inputs').style.display = 'none';
+              await selectLocalDir();
+            }
+          },
+          'none': () => {
+            attachBtn.style.display = 'block';
+            document.getElementById('folder-inputs').style.display = 'none';
+          }
+        };
+
+        // Execute the handler for the current mode
+        if (modeHandlers[storageMode]) {
+          await modeHandlers[storageMode]();
+        }
+
+        // Common operations
+        console.log("Fetching rooms...");
+        await fetchRooms();
+        console.log('Storage mode changed to:', storageMode);
+        sendLogToBackend(`Storage mode changed to: ${storageMode}`);
+    });
+
+    editSaveDirBtn.addEventListener('click', async function () {
+      await selectLocalDir();
+      fetchRooms();
+    });
+
+    dbChooseFolderBtn.addEventListener('click', async function () {
+      Dropbox.choose({
+        success: async function (files) {
+          selectedFolderId = files[0].id;
+          selectedFolderPath = files[0].name;
+          folderName = selectedFolderPath
+          document.getElementById('selected-input-folder').textContent = `Selected Input Folder: ${folderName}`;
+          sessionStorage.setItem('selectedDropboxFolder', selectedFolderPath);
+          console.log(JSON.stringify(files));
+          console.log('selectedFolderPath: ', selectedFolderPath);
+          sendLogToBackend(JSON.stringify(files));
+          sendLogToBackend(`selectedFolderPath: ${selectedFolderPath}`);
+          useOrNot = true;
+          await populateInputFolder(selectedFolderId);
+          await fetchRooms();
+        },
+        cancel: function () {
+          console.log('User canceled folder selection');
+          sendLogToBackend('User canceled folder selection');
+        },
+        multiselect: false,
+        folderselect: true,
+      });
+    });
+
+    dbChooseOutputBtn.addEventListener('click', async function () {
+      Dropbox.choose({
+        success: async function (files) {
+          OutputFolderId = files[0].id;
+          const OutputFolderName = files[0].name;
+          document.getElementById('selected-output-folder').textContent = `Selected Output Folder: ${OutputFolderName}`;
+          sessionStorage.setItem('selectedDropboxOutputFolder', OutputFolderId);
+          console.log(JSON.stringify(files));
+          console.log('OutputFolderId: ', OutputFolderId);
+          sendLogToBackend(JSON.stringify(files));
+          sendLogToBackend(`OutputFolderId: ${OutputFolderId}`);
+          useOrNot = true;
+          await populateOutputFolder(OutputFolderId);
+          await fetchRooms();
+        },
+        cancel: function () {
+          console.log('User canceled folder selection');
+          sendLogToBackend('User canceled folder selection');
+        },
+        multiselect: false,
+        folderselect: true,
+      });
+    });
+ 
+    gdChooseFolderBtn.addEventListener('click', () => {
+      showGoogleDriveInputPicker();
+    });
+    
+    gdChooseOutputBtn.addEventListener('click', () => {
+      showGoogleDriveOutputPicker();
+    });
+
+    lcChooseFolderBtn.addEventListener('click', async () => {
+      try {
+        attachedFiles = [];
+        lcdirectoryHandle = await window.showDirectoryPicker();
+        document.getElementById('selected-input-folder').textContent = `Selected Input Folder: ${lcdirectoryHandle.name}`;
+        for await (const entry of lcdirectoryHandle.values()) {
+          if (entry.kind === 'file') {
+            const file = await entry.getFile();
+            attachedFiles.push(file);
+          }
+        }
+        selectedFolderId = lcdirectoryHandle.name;
+        useOrNot = true;
+        populateInputFolder(selectedFolderId);
+        fetchRooms();
+        console.log("Done selecting local directory:", lcdirectoryHandle.name);
+      } catch (error) {
+        console.error("Error selecting directory:", error);
+        document.getElementById('selected-input-folder').textContent = "No folder selected";
+      }
+    });
+
+    lcChooseOutputBtn.addEventListener('click', async() => {
+      try {
+        const outputDirectoryHandle = await window.showDirectoryPicker();
+        document.getElementById('selected-output-folder').textContent = `Selected Output Folder: ${outputDirectoryHandle.name}`;
+        OutputFolderId = outputDirectoryHandle.name;
+        useOrNot = true;
+        await populateOutputFolder(OutputFolderId);
+      } catch (error) {
+        console.error("Error selecting output directory:", error);
+        document.getElementById('selected-output-folder').textContent = "No folder selected";
+      }
+    })
+    //v14
+    attachBtn.addEventListener('click', function () {
+    if (storageMode === 'premium') {
+        showSnackbar('File attachments disabled in Premium Dropbox mode', 'rgb(255, 100, 100)');
+        return; // Exit the function early
+    }
+    if (storageMode === 'premiumd'){
+      showSnackbar('File attachments disabled in Premium Google Drive mode', 'rgb(255, 100, 100)');
+      return;
+    }
+    if (storageMode === 'premiuml'){
+      showSnackbar('File attachments disabled in Premium Local mode', 'rgb(255, 100, 100)');
+      return;
+    }
+    fileInput.click();
+    });
+
+    //v14
+    fileInput.addEventListener('change', function () {
+      if (fileInput.files.length > 0) {
+        attachedFiles = Array.from(fileInput.files);
+        attachBtn.textContent = '✔';
+        attachedFiles.forEach((file) => {
+          if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              file.dataUrl = e.target.result;
+            };
+            reader.readAsDataURL(file);
+          } else {
+            file.dataUrl = null;
+          }
+        });
+        selectedFileName.textContent = attachedFiles.map((file) => file.name).join(', ');
+      } else {
+        attachedFiles = [];
+        attachBtn.textContent = '📎';
+        selectedFileName.textContent = '';
+      }
+      console.log(attachedFiles);
+    });
+
+    creditAccountSelector.addEventListener('change', function () {
+      const selectedIndex = this.value;
+      currentCreditAccount = creditAccounts[selectedIndex];
+      tokensDisplay.textContent = `${currentCreditAccount.balance.amount}`;
+      populateBotSelector();
+    });
+
+    useFolderBtn.addEventListener('click', function() {
+      showSnackbar('Folder selected successfully', 'rgb(0, 167, 44)');
+      useOrNot = true;
+      folderPopup.style.display = 'none';
+      viewFolderBtn.innerHTML = '✓ Confirmed';
+      viewFolderBtn.style.backgroundColor = '#4CAF50';
+      viewFolderBtn.style.cursor = 'default';
+      // viewFolderBtn.disabled = true;
+    });
+
+    cancelFolderBtn.addEventListener('click', function() {
+      folderPopup.style.display = 'none';
+      
+    });
+
+    closePopupBtn.addEventListener('click', function() {
+      folderPopup.style.display = 'none';
+    });
+
+    // Show/hide view button based on input
+    inputFolder.addEventListener('input', function(e) {
+      viewFolderBtn.style.display = e.target.value.trim() ? 'block' : 'none';
+      if (e.target.value.trim()) {
+        viewFolderBtn.disabled = false;
+        viewFolderBtn.innerHTML = 'Confirm';
+        viewFolderBtn.style.backgroundColor = '#8d0033'; // Original color
+        viewFolderBtn.style.cursor = 'pointer';
+      }
+    });
+
+    // Close popup when clicking outside
+    window.addEventListener('click', function(event) {
+      if (event.target === folderPopup) {
+        folderPopup.style.display = 'none';
+      }
+    });
+
+    viewFolderBtn.addEventListener('click', async function() {
+      const folderId = inputFolder.value.trim();
+      
+      try {
+        // Show loading state
+        folderStatsDiv.innerHTML = '<p>Loading folder contents...</p>';
+        folderPopup.style.display = 'block';
+        useFolderBtn.disabled = true;
+        
+        let stats;
+        
+        // Process the response data (same for all modes)
+        const totalSizeMB = parseFloat(stats.totalSize.replace(' MB', '')) || 
+                          (stats.totalSizeBytes ? stats.totalSizeBytes / (1024 * 1024) : 0);
+        
+        let hasLargeFiles = false;
+        let errorMessage = '';
+
+        for (const file of stats.files) {
+          const fileSizeMB = parseFloat(file.size.replace('MB', '')) || 
+                            (file.sizeBytes ? file.sizeBytes / (1024 * 1024) : 0);
+          if (fileSizeMB > 25) {
+            hasLargeFiles = true;
+            break;
+          }
+        }
+        
+        if (totalSizeMB > 50) {
+          errorMessage += `Total folder size (${totalSizeMB.toFixed(2)}MB) exceeds 50MB limit. `;
+        }
+        if (hasLargeFiles) {
+          errorMessage += `Folder contains files larger than 25MB.`;
+        }
+
+        // Display the folder stats
+        let html = `
+          <p><strong>Folder Name:</strong> ${folderName}</p>
+          <p><strong>Model Name:</strong> ${currentBot?.Model || 'Unselected'}</p>
+          <p><strong>Total Files:</strong> ${stats.totalFiles}</p>
+          <p><strong>Total Size (max. 50 MB):</strong> ${stats.totalSize}</p>
+          <p><strong>Total Cost:</strong> HKD ${parseFloat(stats?.calculatedCost || 0).toFixed(2)}</p>`;
+        
+        if (errorMessage) {
+          html += `<p class="error-message"><strong>Error:</strong> ${errorMessage}</p>`;
+          useFolderBtn.disabled = true;
+        } else {
+          useFolderBtn.disabled = false;
+        }
+
+        html += `<p><strong>Files:</strong></p><ul>`;
+        for (const file of stats.files) {
+          const fileSizeMB = parseFloat(file.size.replace(' MB', '')) || (file.sizeBytes ? file.sizeBytes / (1024 * 1024) : 0);
+          const fileClass = fileSizeMB > 25 ? 'class="large-file"' : '';
+          html += `<li ${fileClass}>${file.name}: ${file.size}</li>`;
+        }
+        html += `</ul>`;
+       
+        folderStatsDiv.innerHTML = html;
+        attachBtn.style.display = (storageMode === 'premium' || storageMode === 'premiumd' || storageMode === 'premiuml') ? 'none' : 'block';
+        
+      } catch (error) {
+        console.error('Error fetching folder stats:', error);
+        folderStatsDiv.innerHTML = `
+          <p class="error">Error loading folder: ${error.message}</p>
+          <p>Please check the folder and try again.</p>`;
+        useFolderBtn.disabled = true;
+      }
+    });
+
+    document.getElementById('async-mode-checkbox').addEventListener('change', function () {
+      asyncMode = this.checked;
+      console.log('Async mode:', asyncMode);
+    });
+    
+    const urlStorageMode = getUrlParameter('storageMode');
+    if (urlStorageMode === 'premium') {
+      dbChooseFolderBtn.style.display = 'block';
+      dbChooseOutputBtn.style.display = 'block';
+      storageMode = 'premium';
+      storageModeSelector.value = 'premium';
+      attachBtn.style.display = 'none';
+      document.getElementById('folder-inputs').style.display = 'block';
+    }
+    if (urlStorageMode === 'premiumd') {
+      gdChooseFolderBtn.style.display = 'block';
+      gdChooseOutputBtn.style.display = 'block';
+      storageMode = 'premiumd';
+      storageModeSelector.value = 'premiumd';
+      attachBtn.style.display = 'none';
+      document.getElementById('folder-inputs').style.display = 'block';
+    }
+
+  });
+</script>
+
+<style>
+    .chatbot-input-field {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ababab;
+    border-radius: 4px;
+    resize: none;
+    overflow-y: auto;
+    min-height: 20px;
+    max-height: 150px;
+    line-height: 1.4;
+    font-family: inherit;
+    font-size: 14px;
+    transition: height 0.1s ease;
+    box-sizing: border-box;
+    vertical-align: top;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+  }
+    .input-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  </style>
