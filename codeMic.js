@@ -1,5 +1,9 @@
 const micButton = document.getElementById('mic-button');
-
+    //voice recognition
+    let recognition = null;
+    let isRecording = false;
+    let lastStartTime = 0;
+    const minInterval = 1000; // 1 second minimum between starts
 //# Voice Recognition Setup
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let voiceSupported = false;
