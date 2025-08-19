@@ -1,4 +1,4 @@
-const micButton = document.getElementById('mic-button');
+
     //voice recognition
     let recognition = null;
     let isRecording = false;
