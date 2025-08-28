@@ -1,0 +1,368 @@
+/* CSS Changes for Two-Row Chatbot Input Layout */
+/* Input container layout based on conversation-box.html logic */
+.chatbot-input {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  gap: 10px;
+  padding: 15px;
+  box-sizing: border-box;
+}
+
+.chatbot-input-container {
+  border: 2px solid #a9a9a9;
+  border-radius: 15px;
+  background: white;
+  transition: border-color 0.3s ease;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+  flex: 1;
+  box-sizing: border-box;
+}
+
+.chatbot-input select {
+  min-width: 150px;
+  max-width: 200px;
+  align-self: flex-end;
+}
+
+.chatbot-input-container:focus-within {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+.chatbot-input-container textarea {
+  width: 100%;
+  border: none;
+  outline: none;
+  padding: 15px;
+  resize: none;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  /* Remove fixed height constraints to allow JavaScript expansion */
+  height: auto;
+  min-height: 20px;
+  max-height: 150px;
+  overflow-y: auto;
+  background: transparent;
+  box-sizing: border-box;
+  /* Remove flex: 1 to allow height changes */
+}
+
+/* Ensure the original chatbot-input-field class still works */
+.chatbot-input-field {
+  width: 100% !important;
+  border: none !important;
+  outline: none !important;
+  resize: none !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  background: transparent !important;
+  box-sizing: border-box !important;
+  /* Allow height to be controlled by JavaScript */
+  height: auto !important;
+  min-height: 20px !important;
+  max-height: 150px !important;
+}
+
+/* First Button Row */
+.chatbot-button-row {
+  display: flex;
+  border-top: 1px solid #e9ecef;
+  background: white;
+  padding: 8px;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-height: 45px;
+  align-items: center;
+}
+
+/* Second Button Row - NEW */
+.chatbot-button-row-second {
+  display: flex;
+  border-top: 1px solid #e9ecef;
+  background: #f8f9fa;
+  padding: 8px;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-height: 45px;
+  align-items: center;
+}
+
+/* Attach Button */
+.chatbot-input-container .chatbot-attach {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  color: #495057;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  min-width: 100px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.chatbot-input-container .chatbot-attach:hover {
+  background: #e9ecef;
+  border-color: #dee2e6;
+  color: #343a40;
+}
+
+/* Send Button */
+.chatbot-input-container .chatbot-send {
+  background: #007bff;
+  border: 1px solid #007bff;
+  color: white;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  border-radius: 8px;
+  min-width: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chatbot-input-container .chatbot-send:hover {
+  background: #0056b3;
+  border-color: #0056b3;
+}
+
+/* Microphone Button */
+.chatbot-input-container .mic-button {
+  background: #28a745;
+  border: 1px solid #28a745;
+  color: white;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  border-radius: 8px;
+  min-width: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chatbot-input-container .mic-button:hover {
+  background: #218838;
+  border-color: #218838;
+}
+
+.chatbot-input-container .mic-button.recording {
+  background: #dc3545;
+  border-color: #dc3545;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Bot Selector Dropdown */
+.chatbot-input-container .bot-selector {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  color: #495057;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  min-width: 200px;
+  outline: none;
+}
+
+.chatbot-input-container .bot-selector:hover {
+  background: #e9ecef;
+  border-color: #dee2e6;
+  color: #343a40;
+}
+
+.chatbot-input-container .bot-selector:focus {
+  background: #e9ecef;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+/* Room List Dropdown - UPDATED */
+.chatbot-input-container .room-list {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  color: #495057;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  min-width: 200px;
+  outline: none;
+  max-height: 100px;
+}
+
+.chatbot-input-container .room-list:hover {
+  background: #e9ecef;
+  border-color: #dee2e6;
+  color: #343a40;
+}
+
+.chatbot-input-container .room-list:focus {
+  background: #e9ecef;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+/* Storage Mode Selector - NEW */
+.chatbot-input-container .storage-mode-selector {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  color: #495057;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  min-width: 200px;
+  outline: none;
+}
+
+.chatbot-input-container .storage-mode-selector:hover {
+  background: #e9ecef;
+  border-color: #dee2e6;
+  color: #343a40;
+}
+
+.chatbot-input-container .storage-mode-selector:focus {
+  background: #e9ecef;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+/* Create Room Button - NEW */
+.chatbot-input-container .create-room-btn {
+  background: #28a745;
+  border: 1px solid #28a745;
+  color: white;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  min-width: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chatbot-input-container .create-room-btn:hover {
+  background: #218838;
+  border-color: #218838;
+}
+
+/* Delete Room Button - NEW */
+.chatbot-input-container .delete-room-btn {
+  background: #dc3545;
+  border: 1px solid #dc3545;
+  color: white;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  min-width: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chatbot-input-container .delete-room-btn:hover {
+  background: #c82333;
+  border-color: #c82333;
+}
+
+#create-room, #delete-room {
+    position: fixed !important;
+    bottom: 60px !important;
+    z-index: 1001 !important;
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+    border-radius: 4px !important;
+    border: none !important;
+    cursor: pointer !important;
+  }
+  
+  #create-room {
+    right: 150px !important;
+    background: #28a745 !important;
+    color: white !important;
+  }
+  
+  #delete-room {
+    right: 200px !important;
+    background: #dc3545 !important;
+    color: white !important;
+  }
+  
+  /* Alternative approach: Move entire sidebar content to input area */
+  @media (min-width: 769px) {
+    .chat-rooms-sidebar {
+      position: fixed !important;
+      bottom: 70px !important;
+      right: 20px !important;
+      width: auto !important;
+      height: auto !important;
+      background: white !important;
+      padding: 10px !important;
+      border-radius: 8px !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+      z-index: 1000 !important;
+    }
+    
+    .chat-rooms-sidebar h3 {
+      font-size: 12px !important;
+      margin: 0 0 5px 0 !important;
+    }
+    
+    .chatbot-window {
+      margin-left: 0 !important;
+      width: 100% !important;
+    }
+  }
+
+/* Save Status Display - NEW */
+.chatbot-input-container .saveStatus {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  color: #495057;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  white-space: nowrap;
+  font-style: italic;
+}

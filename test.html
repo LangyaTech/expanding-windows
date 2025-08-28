@@ -1,0 +1,32 @@
+<!-- Two-Row Chatbot Input Layout HTML Structure -->
+<div class="chatbot-input">
+  <div class="chatbot-input-container">
+    <textarea placeholder="Type your message..." class="chatbot-input-field" id="chatbot-input-field" rows="2"></textarea>
+    
+    <!-- First Button Row -->
+    <div class="chatbot-button-row">
+      <button class="chatbot-attach" id="attach-button" title="Attach file">📎</button>
+      <button class="mic-button" id="mic-button" title="Voice Input">🎤</button>
+      <select id="bot-selector" class="bot-selector"></select>
+      <button id="create-room" class="create-room-btn" title="Create New Room">+</button>
+      <button id="delete-room" class="delete-room-btn" title="Delete Current Room">🗑️</button>
+      <button class="chatbot-send" id="send-button">Send</button>
+    </div>
+    
+    <!-- Second Button Row - Dropdowns and Status -->
+    <div class="chatbot-button-row-second">
+      <select id="room-list" class="room-list" title="Select Chat Room">
+        <option value="general">General</option>
+        <option value="test">Test</option>
+      </select>
+      <select id="storage-mode-selector" class="storage-mode-selector">
+        <option value="none">None</option>
+        <option value="local">Local Storage</option>
+        <option value="premium">Premium Dropbox</option>
+        <option value="premiumd">Premium Drive</option>
+        <option value="premiuml">Premium Local</option>
+      </select>
+      <span id="saveStatus" class="saveStatus" style="display: none;">Local folder: Test</span>
+    </div>
+  </div>
+</div>
