@@ -1,5 +1,8 @@
 // Two-Row Chatbot Input Layout JavaScript
 // Ensure textarea expansion works with the new container layout
+
+
+console.log("AAAAA");
 document.addEventListener('DOMContentLoaded', function() {
   const textarea = document.getElementById('chatbot-input-field');
   
